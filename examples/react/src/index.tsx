@@ -1,6 +1,7 @@
 import React from 'react'
 import * as ReactDOM from 'react-dom'
 import * as Riptide from '@ironbay/riptide'
+import './App.css'
 
 // Create a connection to the remote server
 const connection = Riptide.Connection.create()
@@ -40,6 +41,7 @@ interface Creature {
     name?: string
     key?: string
     created?: number
+    completed?: boolean
 }
 
 function App() {
@@ -64,15 +66,27 @@ function App() {
         }
     }
 
+    async function todo_complete(e, key) {
+        console.dir(e.target.checked)
+        const completed = e.target.checked ? true : false
+        await sync.merge(['creatures', key, 'completed'], completed)
+    }
+
+    async function todo_delete(key) {
+        await sync.delete(['creatures', key])
+    }
+
     return (
-        <div >
+        <div>
             {
                 local
                     .query_values<Creature>(['creatures'])
-                    .map(item => {
+                    .map(todo => {
                         return (
-                            <div key={item.key} onClick={async () => await sync.delete(['creatures', item.key])}>
-                                {item.name} - {item.created && `Created ${new Date(item.created).toLocaleTimeString()}`}
+                            <div key={todo.key}>
+                                <input type="checkbox" checked={todo.completed} onChange={(e) => todo_complete(e, todo.key)} />
+                                <span className={todo.completed ? "line-through" : ""}>{todo.name} - {todo.created && `Created ${new Date(todo.created).toLocaleTimeString()}`}</span>
+                                <span onClick={async () => await todo_delete(todo.key)}>&nbsp;X</span>
                             </div>
                         )
                     })
